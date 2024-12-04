@@ -32,7 +32,7 @@ imagen_proyectil_jugador = pygame.image.load('assets/proyectil_jugador.png').con
 imagen_proyectil_enemigo = pygame.image.load('assets/proyectil_enemigo.png').convert_alpha()
 imagen_powerup = pygame.image.load('assets/powerup.png').convert_alpha()
 imagen_jefe = pygame.image.load('assets/jefe.png').convert_alpha()
-imagen_jefe2 = pygame.image.load('assets/jefe2.png').convert_alpha() 
+imagen_jefe2 = pygame.image.load('assets/jefe2.png').convert_alpha()  # Nuevo jefe para nivel 2
 imagen_fondo = pygame.image.load('assets/fondo.png').convert()
 
 # **Cargar la imagen del corazón**
@@ -106,9 +106,9 @@ sonido_explosion = pygame.mixer.Sound('assets/sonido_explosion.wav')
 musica_fondo = 'assets/musica_fondo.mp3'
 
 # Fuentes
-fuente_puntuacion = pygame.font.SysFont('Roboto', 25)
-fuente_menu = pygame.font.SysFont('Roboto', 50)
-fuente_fin = pygame.font.SysFont('Roboto', 40)
+fuente_puntuacion = pygame.font.SysFont('Arial', 25)
+fuente_menu = pygame.font.SysFont('Arial', 50)
+fuente_fin = pygame.font.SysFont('Arial', 40)
 
 def reproducir_video(ruta_video):
     # Cargar el video con MoviePy
@@ -418,7 +418,7 @@ def juego():
     # Variables de nivel y enemigos
     nivel = 1
     enemigos_eliminados = 0
-    enemigos_por_nivel = {1: 10, 2: 15}
+    enemigos_por_nivel = {1: 10, 2: 15}  # Define los enemigos por nivel
     jefe_generado = False
 
     # Temporizadores
@@ -484,9 +484,10 @@ def juego():
                     jefe_generado = False
                     nivel += 1
                     enemigos_eliminados = 0
-                    # Resetear temporizador para el nuevo nivel
-                    pygame.time.set_timer(GENERAR_ENEMIGO, max(200, 1000 - nivel * 100))
-                    pygame.time.set_timer(GENERAR_POWERUP, 10000)
+                    # Resetear temporizador para el nuevo nivel sólo si el nivel siguiente existe
+                    if nivel in enemigos_por_nivel:
+                        pygame.time.set_timer(GENERAR_ENEMIGO, max(200, 1000 - nivel * 100))
+                        pygame.time.set_timer(GENERAR_POWERUP, 10000)
                     if nivel > 2:
                         # Fin del juego (has ganado)
                         ejecutando = False
@@ -523,7 +524,8 @@ def juego():
             jugador.vida += 1
 
         # Verificar si se debe generar el jefe
-        if enemigos_eliminados >= enemigos_por_nivel[nivel] and not jefe_generado:
+        # Añadimos una verificación para asegurarnos de que el nivel existe en el diccionario
+        if nivel in enemigos_por_nivel and enemigos_eliminados >= enemigos_por_nivel[nivel] and not jefe_generado:
             jefe = Jefe(nivel)
             todos_los_sprites.add(jefe)
             jefe_generado = True
