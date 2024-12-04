@@ -4,6 +4,54 @@ import random
 from moviepy import VideoFileClip
 import os
 
+# Inicialización de Pygame
+pygame.init()
+pygame.mixer.init()
+
+# Configuración de la pantalla
+ANCHO, ALTO = 800, 600
+VENTANA = pygame.display.set_mode((ANCHO, ALTO))
+pygame.display.set_caption("Galactic Defender")
+
+# Reloj para controlar los FPS
+FPS = 60
+RELOJ = pygame.time.Clock()
+
+# Colores
+BLANCO = (255, 255, 255)
+NEGRO = (0, 0, 0)
+GRIS = (100, 100, 100)
+AZUL = (0, 0, 255)
+
+# Cargar imágenes (asegúrate de tener estas imágenes en la ruta especificada)
+imagen_nave = pygame.image.load('assets/nave_jugador.png').convert_alpha()
+imagen_enemigo = pygame.image.load('assets/nave_enemiga.png').convert_alpha()
+imagen_proyectil_jugador = pygame.image.load('assets/proyectil_jugador.png').convert_alpha()
+imagen_proyectil_enemigo = pygame.image.load('assets/proyectil_enemigo.png').convert_alpha()
+imagen_powerup = pygame.image.load('assets/powerup.png').convert_alpha()
+imagen_jefe = pygame.image.load('assets/jefe.png').convert_alpha()
+
+# Cargar imagen de fondo
+try:
+    imagen_fondo = pygame.image.load('assets/fondo.jpg').convert()
+    # Opcional: Redimensionar si la imagen no tiene el tamaño correcto
+    imagen_fondo = pygame.transform.scale(imagen_fondo, (ANCHO, ALTO))
+except pygame.error as e:
+    print(f"Error al cargar la imagen de fondo: {e}")
+    # En caso de error, rellenar con negro
+    imagen_fondo = pygame.Surface((ANCHO, ALTO))
+    imagen_fondo.fill(NEGRO)
+
+# Cargar sonidos
+sonido_disparo = pygame.mixer.Sound('assets/sonido_disparo.wav')
+sonido_explosion = pygame.mixer.Sound('assets/sonido_explosion.wav')
+musica_fondo = 'assets/musica_fondo.mp3'
+
+# Fuentes
+fuente_puntuacion = pygame.font.SysFont('Arial', 25)
+fuente_menu = pygame.font.SysFont('Arial', 50)
+fuente_fin = pygame.font.SysFont('Arial', 40)
+
 def reproducir_video(ruta_video):
     # Cargar el video con MoviePy
     clip = VideoFileClip(ruta_video)
@@ -15,12 +63,12 @@ def reproducir_video(ruta_video):
     # Reproducir el audio del video
     audio_temp = 'temp_audio.mp3'
     if clip.audio:
-        clip.audio.write_audiofile(audio_temp)
+        clip.audio.write_audiofile(audio_temp, logger=None)  # logger=None para evitar mensajes en la consola
         pygame.mixer.music.load(audio_temp)
         pygame.mixer.music.play()
     
     # Reproducir el video frame por frame
-    for frame in clip.iter_frames(fps=FPS):
+    for frame in clip.iter_frames(fps=FPS, dtype="uint8"):
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 pygame.mixer.music.stop()
@@ -54,51 +102,6 @@ def reproducir_video(ruta_video):
     pygame.mixer.music.unload()  # Descarga el audio del mezclador
     if os.path.exists(audio_temp):
         os.remove(audio_temp)
-
-
-
-
-# Inicialización de Pygame
-pygame.init()
-pygame.mixer.init()
-
-# Configuración de la pantalla
-ANCHO, ALTO = 800, 600
-VENTANA = pygame.display.set_mode((ANCHO, ALTO))
-pygame.display.set_caption("Galactic Defender")
-
-# Reloj para controlar los FPS
-FPS = 60
-RELOJ = pygame.time.Clock()
-
-# Colores
-BLANCO = (255, 255, 255)
-NEGRO = (0, 0, 0)
-GRIS = (100, 100, 100)
-AZUL = (0, 0, 255)
-
-# Cargar imágenes (asegúrate de tener estas imágenes en la ruta especificada)
-# Reemplaza 'ruta/a/imagen.png' por las rutas correctas de tus imágenes
-imagen_nave = pygame.image.load('assets/nave_jugador.png').convert_alpha()
-imagen_enemigo = pygame.image.load('assets/nave_enemiga.png').convert_alpha()
-imagen_proyectil_jugador = pygame.image.load('assets/proyectil_jugador.png').convert_alpha()
-imagen_proyectil_enemigo = pygame.image.load('assets/proyectil_enemigo.png').convert_alpha()
-imagen_powerup = pygame.image.load('assets/powerup.png').convert_alpha()
-imagen_jefe = pygame.image.load('assets/jefe.png').convert_alpha()
-
-# Cargar sonidos
-sonido_disparo = pygame.mixer.Sound('assets/sonido_disparo.wav')
-sonido_explosion = pygame.mixer.Sound('assets/sonido_explosion.wav')
-musica_fondo = 'assets/musica_fondo.mp3'
-
-# Reproducir música de fondo
-pygame.mixer.music.load(musica_fondo)
-pygame.mixer.music.set_volume(0.5)
-
-# Fuentes
-fuente_puntuacion = pygame.font.SysFont('Arial', 25)
-fuente_menu = pygame.font.SysFont('Arial', 50)
-fuente_fin = pygame.font.SysFont('Arial', 40)
 
 # Clases
 class Jugador(pygame.sprite.Sprite):
@@ -329,10 +332,6 @@ def juego():
     GENERAR_POWERUP = pygame.USEREVENT + 2
     pygame.time.set_timer(GENERAR_POWERUP, 10000)  # Cada 10 segundos
 
-    # Fondo
-    fondo = pygame.Surface((ANCHO, ALTO))
-    fondo.fill(NEGRO)
-
     # Bucle principal del juego
     ejecutando = True
     while ejecutando:
@@ -417,8 +416,10 @@ def juego():
             todos_los_sprites.add(jefe)
             jefe_generado = True
 
-        # Dibujar
-        VENTANA.blit(fondo, (0, 0))
+        # Dibujar el fondo
+        VENTANA.blit(imagen_fondo, (0, 0))  # Dibujar el fondo antes de los sprites
+
+        # Dibujar sprites
         todos_los_sprites.draw(VENTANA)
 
         # Mostrar puntuación y vida
