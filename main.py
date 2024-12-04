@@ -3,7 +3,7 @@ import sys
 import random
 from moviepy import VideoFileClip
 import os
-import imageio 
+import imageio  # Importar imageio para manejar GIFs
 
 # Inicialización de Pygame
 pygame.init()
@@ -32,7 +32,7 @@ imagen_proyectil_jugador = pygame.image.load('assets/proyectil_jugador.png').con
 imagen_proyectil_enemigo = pygame.image.load('assets/proyectil_enemigo.png').convert_alpha()
 imagen_powerup = pygame.image.load('assets/powerup.png').convert_alpha()
 imagen_jefe = pygame.image.load('assets/jefe.png').convert_alpha()
-imagen_jefe2 = pygame.image.load('assets/jefe2.png').convert_alpha()  # Nuevo jefe para nivel 2
+imagen_jefe2 = pygame.image.load('assets/jefe2.png').convert_alpha() 
 imagen_fondo = pygame.image.load('assets/fondo.png').convert()
 
 # **Cargar la imagen del corazón**
@@ -92,6 +92,13 @@ num_cuadros_derrota = len(cuadros_derrota)
 frame_actual_derrota = 0
 velocidad_derrota = 10  # Cambia este valor para ajustar la velocidad de la animación
 contador_derrota = 0
+
+# Cargar cuadros del GIF de victoria
+cuadros_victoria = cargar_gif('assets/exito.gif')
+num_cuadros_victoria = len(cuadros_victoria)
+frame_actual_victoria = 0
+velocidad_victoria = 10  # Cambia este valor para ajustar la velocidad de la animación
+contador_victoria = 0
 
 # Cargar sonidos
 sonido_disparo = pygame.mixer.Sound('assets/sonido_disparo.wav')
@@ -338,6 +345,7 @@ def mostrar_menu():
 # Función para mostrar la pantalla de fin de juego
 def mostrar_fin_juego(ganaste, puntuacion):
     global cuadros_derrota, num_cuadros_derrota, frame_actual_derrota, velocidad_derrota, contador_derrota
+    global cuadros_victoria, num_cuadros_victoria, frame_actual_victoria, velocidad_victoria, contador_victoria
 
     esperando = True
     while esperando:
@@ -350,39 +358,40 @@ def mostrar_fin_juego(ganaste, puntuacion):
                 if evento.key == pygame.K_RETURN:
                     esperando = False
 
-        # Dibujar la animación del GIF de derrota si el jugador no ganó
-        if not ganaste and cuadros_derrota:
-            if cuadros_derrota:
-                VENTANA.blit(cuadros_derrota[frame_actual_derrota], (0, 0))
-                # Actualizar el frame actual
-                contador_derrota += 1
-                if contador_derrota >= velocidad_derrota:
-                    contador_derrota = 0
-                    frame_actual_derrota = (frame_actual_derrota + 1) % num_cuadros_derrota
+        # Dibujar la animación del GIF correspondiente
+        if ganaste and cuadros_victoria:
+            # Mostrar victoria
+            VENTANA.blit(cuadros_victoria[frame_actual_victoria], (0, 0))
+            # Actualizar el frame actual
+            contador_victoria += 1
+            if contador_victoria >= velocidad_victoria:
+                contador_victoria = 0
+                frame_actual_victoria = (frame_actual_victoria + 1) % num_cuadros_victoria
+        elif not ganaste and cuadros_derrota:
+            # Mostrar derrota
+            VENTANA.blit(cuadros_derrota[frame_actual_derrota], (0, 0))
+            # Actualizar el frame actual
+            contador_derrota += 1
+            if contador_derrota >= velocidad_derrota:
+                contador_derrota = 0
+                frame_actual_derrota = (frame_actual_derrota + 1) % num_cuadros_derrota
         else:
-            # Dibujar el fondo negro si el jugador ganó o no hay cuadros de GIF
+            # Dibujar el fondo negro si no hay GIFs cargados
             VENTANA.fill(NEGRO)
 
         # Dibujar mensajes
         if ganaste:
-            mensaje = "¡Has ganado!"
+            mensaje = "¡Has Ganado!"
         else:
-            mensaje = "Juego terminado"
+            mensaje = "¡Has Perdido!"
         texto_fin = fuente_fin.render(mensaje, True, BLANCO)
         texto_puntuacion = fuente_puntuacion.render(f"Puntuación: {puntuacion}", True, BLANCO)
         texto_reiniciar = fuente_puntuacion.render("Presiona ENTER para volver al menú", True, BLANCO)
 
         # Posicionar los textos
-        if not ganaste and cuadros_derrota:
-            # Si se está mostrando la animación, posicionar los textos en la parte inferior
-            VENTANA.blit(texto_fin, (ANCHO // 2 - texto_fin.get_width() // 2, ALTO - 150))
-            VENTANA.blit(texto_puntuacion, (ANCHO // 2 - texto_puntuacion.get_width() // 2, ALTO - 100))
-            VENTANA.blit(texto_reiniciar, (ANCHO // 2 - texto_reiniciar.get_width() // 2, ALTO - 50))
-        else:
-            # Si no hay animación o el jugador ganó, posicionar los textos en el centro
-            VENTANA.blit(texto_fin, (ANCHO // 2 - texto_fin.get_width() // 2, ALTO // 2 - 50))
-            VENTANA.blit(texto_puntuacion, (ANCHO // 2 - texto_puntuacion.get_width() // 2, ALTO // 2))
-            VENTANA.blit(texto_reiniciar, (ANCHO // 2 - texto_reiniciar.get_width() // 2, ALTO // 2 + 50))
+        VENTANA.blit(texto_fin, (ANCHO // 2 - texto_fin.get_width() // 2, ALTO // 2 - 50))
+        VENTANA.blit(texto_puntuacion, (ANCHO // 2 - texto_puntuacion.get_width() // 2, ALTO // 2))
+        VENTANA.blit(texto_reiniciar, (ANCHO // 2 - texto_reiniciar.get_width() // 2, ALTO // 2 + 50))
 
         pygame.display.flip()
 
