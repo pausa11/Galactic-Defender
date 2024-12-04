@@ -94,7 +94,7 @@ velocidad_derrota = 10  # Cambia este valor para ajustar la velocidad de la anim
 contador_derrota = 0
 
 # Cargar cuadros del GIF de victoria
-cuadros_victoria = cargar_gif('assets/exito.gif')
+cuadros_victoria = cargar_gif('assets/exito.gif')  # Asegúrate de que 'exito.gif' es el GIF correcto para victoria
 num_cuadros_victoria = len(cuadros_victoria)
 frame_actual_victoria = 0
 velocidad_victoria = 10  # Cambia este valor para ajustar la velocidad de la animación
@@ -103,6 +103,8 @@ contador_victoria = 0
 # Cargar sonidos
 sonido_disparo = pygame.mixer.Sound('assets/sonido_disparo.wav')
 sonido_explosion = pygame.mixer.Sound('assets/sonido_explosion.wav')
+sonido_explosion_enemigo = pygame.mixer.Sound('assets/sonido_explosion_enemiga.mp3')  # Asegúrate de que sea .wav
+sonido_powerup = pygame.mixer.Sound('assets/sonido_powerup.mp3')  # Nuevo sonido para power-up
 musica_fondo = 'assets/musica_fondo.mp3'
 
 # Fuentes
@@ -502,6 +504,7 @@ def juego():
         colisiones_jugador_proyectiles = pygame.sprite.spritecollide(jugador, proyectiles_enemigos, True)
         if colisiones_jugador_proyectiles:
             jugador.vida -= 1
+            sonido_explosion_enemigo.play()
             if jugador.vida <= 0:
                 ejecutando = False
                 mostrar_fin_juego(False, jugador.puntuacion)
@@ -522,6 +525,8 @@ def juego():
         for powerup in colisiones_powerups:
             # Implementa el efecto del power-up (ejemplo: vida extra)
             jugador.vida += 1
+            # Reproducir sonido de power-up
+            sonido_powerup.play()
 
         # Verificar si se debe generar el jefe
         # Añadimos una verificación para asegurarnos de que el nivel existe en el diccionario
