@@ -1,7 +1,7 @@
 import pygame
 import sys
 import random
-from moviepy import VideoFileClip
+from moviepy import VideoFileClip  # Asegúrate de tener instalada la versión correcta
 import os
 import imageio  # Importar imageio para manejar GIFs
 
@@ -27,32 +27,15 @@ AZUL = (0, 0, 255)
 # Cargar imágenes (asegúrate de tener estas imágenes en la ruta especificada)
 imagen_nave = pygame.image.load('assets/nave_jugador.png').convert_alpha()
 imagen_enemigo = pygame.image.load('assets/nave_enemiga.png').convert_alpha()
+imagen_enemigo2 = pygame.image.load('assets/nave_enemiga2.png').convert_alpha()  # Nueva nave enemiga para nivel 2
 imagen_proyectil_jugador = pygame.image.load('assets/proyectil_jugador.png').convert_alpha()
 imagen_proyectil_enemigo = pygame.image.load('assets/proyectil_enemigo.png').convert_alpha()
 imagen_powerup = pygame.image.load('assets/powerup.png').convert_alpha()
 imagen_jefe = pygame.image.load('assets/jefe.png').convert_alpha()
+imagen_jefe2 = pygame.image.load('assets/jefe2.png').convert_alpha()  # Nuevo jefe para nivel 2
+imagen_fondo = pygame.image.load('assets/fondo.png').convert()
 
-# Cargar imagen de fondo
-try:
-    imagen_fondo = pygame.image.load('assets/fondo.jpg').convert()
-    # Opcional: Redimensionar si la imagen no tiene el tamaño correcto
-    imagen_fondo = pygame.transform.scale(imagen_fondo, (ANCHO, ALTO))
-except pygame.error as e:
-    print(f"Error al cargar la imagen de fondo: {e}")
-    # En caso de error, rellenar con negro
-    imagen_fondo = pygame.Surface((ANCHO, ALTO))
-    imagen_fondo.fill(NEGRO)
-
-# Cargar sonidos
-sonido_disparo = pygame.mixer.Sound('assets/sonido_disparo.wav')
-sonido_explosion = pygame.mixer.Sound('assets/sonido_explosion.wav')
-musica_fondo = 'assets/musica_fondo.mp3'
-
-# Fuentes
-fuente_puntuacion = pygame.font.SysFont('Arial', 25)
-fuente_menu = pygame.font.SysFont('Arial', 50)
-fuente_fin = pygame.font.SysFont('Arial', 40)
-
+# **Cargar GIF animado como fondo**
 def cargar_gif(ruta_gif):
     """
     Carga un GIF animado y devuelve una lista de superficies de Pygame.
@@ -91,6 +74,13 @@ def cargar_gif(ruta_gif):
         print(f"Error al cargar el GIF: {e}")
         return []
 
+# Cargar cuadros del GIF de fondo
+cuadros_fondo = cargar_gif('assets/fondo.gif')
+num_cuadros_fondo = len(cuadros_fondo)
+frame_actual_fondo = 0
+velocidad_fondo = 5  # Cambia este valor para ajustar la velocidad de la animación
+contador_fondo = 0
+
 # Cargar cuadros del GIF de derrota
 cuadros_derrota = cargar_gif('assets/derrota.gif')
 num_cuadros_derrota = len(cuadros_derrota)
@@ -98,21 +88,31 @@ frame_actual_derrota = 0
 velocidad_derrota = 10  # Cambia este valor para ajustar la velocidad de la animación
 contador_derrota = 0
 
+# Cargar sonidos
+sonido_disparo = pygame.mixer.Sound('assets/sonido_disparo.wav')
+sonido_explosion = pygame.mixer.Sound('assets/sonido_explosion.wav')
+musica_fondo = 'assets/musica_fondo.mp3'
+
+# Fuentes
+fuente_puntuacion = pygame.font.SysFont('Roboto', 25)
+fuente_menu = pygame.font.SysFont('Roboto', 50)
+fuente_fin = pygame.font.SysFont('Roboto', 40)
+
 def reproducir_video(ruta_video):
     # Cargar el video con MoviePy
     clip = VideoFileClip(ruta_video)
-    
+
     # Escalar el video si es necesario
     if clip.size != (ANCHO, ALTO):
-        clip = clip.resized(width=ANCHO, height=ALTO)
-    
+        clip = clip.resized(width=ANCHO, height=ALTO)  # Corregido a 'resize'
+
     # Reproducir el audio del video
     audio_temp = 'temp_audio.mp3'
     if clip.audio:
         clip.audio.write_audiofile(audio_temp, logger=None)  # logger=None para evitar mensajes en la consola
         pygame.mixer.music.load(audio_temp)
         pygame.mixer.music.play()
-    
+
     # Reproducir el video frame por frame
     for frame in clip.iter_frames(fps=FPS, dtype="uint8"):
         for evento in pygame.event.get():
@@ -135,8 +135,7 @@ def reproducir_video(ruta_video):
 
         # Convertir el frame a una superficie de Pygame
         frame_surface = pygame.surfarray.make_surface(frame.swapaxes(0, 1))
-        # Ajusta la orientación si es necesario
-        frame_surface = pygame.transform.flip(frame_surface, True, False)
+
 
         # Dibujar el frame en la ventana
         VENTANA.blit(frame_surface, (0, 0))
@@ -196,7 +195,13 @@ class Proyectil(pygame.sprite.Sprite):
 class Enemigo(pygame.sprite.Sprite):
     def __init__(self, nivel):
         super().__init__()
-        self.image = imagen_enemigo
+        # Seleccionar la imagen del enemigo según el nivel
+        if nivel == 1:
+            self.image = imagen_enemigo
+        elif nivel == 2:
+            self.image = imagen_enemigo2  # Nueva imagen para nivel 2
+        else:
+            self.image = imagen_enemigo  # Por defecto, usar imagen de nivel 1
         self.rect = self.image.get_rect(
             center=(random.randint(20, ANCHO - 20), random.randint(-100, -40))
         )
@@ -233,7 +238,13 @@ class PowerUp(pygame.sprite.Sprite):
 class Jefe(pygame.sprite.Sprite):
     def __init__(self, nivel):
         super().__init__()
-        self.image = imagen_jefe
+        # Seleccionar la imagen del jefe según el nivel
+        if nivel == 1:
+            self.image = imagen_jefe
+        elif nivel == 2:
+            self.image = imagen_jefe2  # Nueva imagen para nivel 2
+        else:
+            self.image = imagen_jefe  # Por defecto, usar imagen de nivel 1
         self.rect = self.image.get_rect(center=(ANCHO // 2, -150))
         self.velocidad = 2
         self.vida = 20 + nivel * 10
@@ -269,9 +280,7 @@ def mostrar_menu():
 
     while esperando:
         RELOJ.tick(FPS)
-        VENTANA.fill(NEGRO)
-        texto_titulo = fuente_menu.render("GALACTIC DEFENDER", True, BLANCO)
-        VENTANA.blit(texto_titulo, (ANCHO // 2 - texto_titulo.get_width() // 2, ALTO // 2 - 150))
+        VENTANA.blit(imagen_fondo, (0, 0))
 
         mouse_pos = pygame.mouse.get_pos()
         mouse_click = False
@@ -339,12 +348,13 @@ def mostrar_fin_juego(ganaste, puntuacion):
 
         # Dibujar la animación del GIF de derrota si el jugador no ganó
         if not ganaste and cuadros_derrota:
-            VENTANA.blit(cuadros_derrota[frame_actual_derrota], (0, 0))
-            # Actualizar el frame actual
-            contador_derrota += 1
-            if contador_derrota >= velocidad_derrota:
-                contador_derrota = 0
-                frame_actual_derrota = (frame_actual_derrota + 1) % num_cuadros_derrota
+            if cuadros_derrota:
+                VENTANA.blit(cuadros_derrota[frame_actual_derrota], (0, 0))
+                # Actualizar el frame actual
+                contador_derrota += 1
+                if contador_derrota >= velocidad_derrota:
+                    contador_derrota = 0
+                    frame_actual_derrota = (frame_actual_derrota + 1) % num_cuadros_derrota
         else:
             # Dibujar el fondo negro si el jugador ganó o no hay cuadros de GIF
             VENTANA.fill(NEGRO)
@@ -374,6 +384,7 @@ def mostrar_fin_juego(ganaste, puntuacion):
 
 # Función principal del juego
 def juego():
+    global cuadros_fondo, num_cuadros_fondo, frame_actual_fondo, velocidad_fondo, contador_fondo
     # Reproducir música de fondo
     pygame.mixer.music.load(musica_fondo)
     pygame.mixer.music.set_volume(0.5)
@@ -428,6 +439,16 @@ def juego():
         # Actualizaciones
         todos_los_sprites.update()
 
+        # **Animación del Fondo**
+        if cuadros_fondo:
+            VENTANA.blit(cuadros_fondo[frame_actual_fondo], (0, 0))
+            contador_fondo += 1
+            if contador_fondo >= velocidad_fondo:
+                contador_fondo = 0
+                frame_actual_fondo = (frame_actual_fondo + 1) % num_cuadros_fondo
+        else:
+            VENTANA.fill(NEGRO)
+
         # Colisiones entre proyectiles del jugador y enemigos
         colisiones_enemigos = pygame.sprite.groupcollide(enemigos, proyectiles_jugador, False, True)
         for enemigo, proyectiles in colisiones_enemigos.items():
@@ -450,11 +471,18 @@ def juego():
                     jefe_generado = False
                     nivel += 1
                     enemigos_eliminados = 0
+                    # Resetear temporizador para el nuevo nivel
+                    pygame.time.set_timer(GENERAR_ENEMIGO, max(200, 1000 - nivel * 100))
+                    pygame.time.set_timer(GENERAR_POWERUP, 10000)
                     if nivel > 2:
                         # Fin del juego (has ganado)
                         ejecutando = False
                         mostrar_fin_juego(True, jugador.puntuacion)
                         break
+                    else:
+                        # Cambiar el fondo al nuevo nivel
+                        # Dado que usamos el mismo fondo animado, no hay necesidad de cambiar
+                        pass
 
         # Colisiones entre jugador y proyectiles enemigos
         colisiones_jugador_proyectiles = pygame.sprite.spritecollide(jugador, proyectiles_enemigos, True)
@@ -486,9 +514,6 @@ def juego():
             jefe = Jefe(nivel)
             todos_los_sprites.add(jefe)
             jefe_generado = True
-
-        # Dibujar el fondo
-        VENTANA.blit(imagen_fondo, (0, 0))  # Dibujar el fondo antes de los sprites
 
         # Dibujar sprites
         todos_los_sprites.draw(VENTANA)
