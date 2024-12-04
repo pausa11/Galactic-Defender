@@ -1,9 +1,9 @@
 import pygame
 import sys
 import random
-from moviepy import VideoFileClip  # Asegúrate de tener instalada la versión correcta
+from moviepy import VideoFileClip
 import os
-import imageio  # Importar imageio para manejar GIFs
+import imageio 
 
 # Inicialización de Pygame
 pygame.init()
@@ -35,7 +35,12 @@ imagen_jefe = pygame.image.load('assets/jefe.png').convert_alpha()
 imagen_jefe2 = pygame.image.load('assets/jefe2.png').convert_alpha()  # Nuevo jefe para nivel 2
 imagen_fondo = pygame.image.load('assets/fondo.png').convert()
 
-# **Cargar GIF animado como fondo**
+# **Cargar la imagen del corazón**
+imagen_corazon = pygame.image.load('assets/corazon.png').convert_alpha()
+# Opcional: Escalar el corazón si es necesario
+imagen_corazon = pygame.transform.scale(imagen_corazon, (30, 30))  # Ajusta el tamaño según tus necesidades
+
+# Cargar GIF animado como fondo
 def cargar_gif(ruta_gif):
     """
     Carga un GIF animado y devuelve una lista de superficies de Pygame.
@@ -135,7 +140,6 @@ def reproducir_video(ruta_video):
 
         # Convertir el frame a una superficie de Pygame
         frame_surface = pygame.surfarray.make_surface(frame.swapaxes(0, 1))
-
 
         # Dibujar el frame en la ventana
         VENTANA.blit(frame_surface, (0, 0))
@@ -518,11 +522,13 @@ def juego():
         # Dibujar sprites
         todos_los_sprites.draw(VENTANA)
 
-        # Mostrar puntuación y vida
+        # Mostrar puntuación y vidas
         texto_puntuacion = fuente_puntuacion.render(f"Puntuación: {jugador.puntuacion}", True, BLANCO)
-        texto_vida = fuente_puntuacion.render(f"Vida: {jugador.vida}", True, BLANCO)
         VENTANA.blit(texto_puntuacion, (10, 10))
-        VENTANA.blit(texto_vida, (ANCHO - 100, 10))
+
+        # Dibujar corazones para representar las vidas
+        for i in range(jugador.vida):
+            VENTANA.blit(imagen_corazon, (10 + i * (imagen_corazon.get_width() + 5), 50))
 
         pygame.display.flip()
 
