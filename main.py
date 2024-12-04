@@ -1,6 +1,61 @@
 import pygame
 import sys
 import random
+from moviepy import VideoFileClip
+import os
+
+def reproducir_video(ruta_video):
+    # Cargar el video con MoviePy
+    clip = VideoFileClip(ruta_video)
+    
+    # Escalar el video si es necesario
+    if clip.size != (ANCHO, ALTO):
+        clip = clip.resized(width=ANCHO, height=ALTO)
+    
+    # Reproducir el audio del video
+    audio_temp = 'temp_audio.mp3'
+    if clip.audio:
+        clip.audio.write_audiofile(audio_temp)
+        pygame.mixer.music.load(audio_temp)
+        pygame.mixer.music.play()
+    
+    # Reproducir el video frame por frame
+    for frame in clip.iter_frames(fps=FPS):
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.mixer.music.stop()
+                pygame.mixer.music.unload()  # Descarga el audio del mezclador
+                clip.close()
+                if os.path.exists(audio_temp):
+                    os.remove(audio_temp)
+                pygame.quit()
+                sys.exit()
+            if evento.type == pygame.KEYDOWN:
+                if evento.key == pygame.K_ESCAPE:
+                    pygame.mixer.music.stop()
+                    pygame.mixer.music.unload()  # Descarga el audio del mezclador
+                    clip.close()
+                    if os.path.exists(audio_temp):
+                        os.remove(audio_temp)
+                    return  # Salir de la función y pasar al menú
+    
+        # Convertir el frame a una superficie de Pygame
+        frame_surface = pygame.surfarray.make_surface(frame.swapaxes(0, 1))
+        frame_surface = pygame.transform.flip(frame_surface, True, False)
+    
+        # Dibujar el frame en la ventana
+        VENTANA.blit(frame_surface, (0, 0))
+        pygame.display.update()
+        RELOJ.tick(FPS)
+    
+    # Cerrar el clip y detener el audio al finalizar el video
+    clip.close()
+    pygame.mixer.music.stop()
+    pygame.mixer.music.unload()  # Descarga el audio del mezclador
+    if os.path.exists(audio_temp):
+        os.remove(audio_temp)
+
+
 
 
 # Inicialización de Pygame
@@ -246,6 +301,8 @@ def mostrar_fin_juego(ganaste, puntuacion):
 # Función principal del juego
 def juego():
     # Reproducir música de fondo
+    pygame.mixer.music.load(musica_fondo)
+    pygame.mixer.music.set_volume(0.5)
     pygame.mixer.music.play(-1)  # Repetir indefinidamente
 
     # Grupos de sprites
@@ -377,5 +434,6 @@ def juego():
 
 # Bucle principal del programa
 while True:
+    reproducir_video('assets/intro.mp4')
     mostrar_menu()
     juego()
