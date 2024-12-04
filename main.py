@@ -3,6 +3,7 @@ import sys
 import random
 from moviepy import VideoFileClip
 import os
+import imageio  # Importar imageio para manejar GIFs
 
 # Inicialización de Pygame
 pygame.init()
@@ -52,6 +53,51 @@ fuente_puntuacion = pygame.font.SysFont('Arial', 25)
 fuente_menu = pygame.font.SysFont('Arial', 50)
 fuente_fin = pygame.font.SysFont('Arial', 40)
 
+def cargar_gif(ruta_gif):
+    """
+    Carga un GIF animado y devuelve una lista de superficies de Pygame.
+    """
+    try:
+        # Leer todos los cuadros del GIF
+        gif = imageio.mimread(ruta_gif)
+        frames = []
+        for frame in gif:
+            # Verificar el número de canales
+            if frame.ndim == 3:
+                if frame.shape[2] == 4:
+                    mode = 'RGBA'
+                elif frame.shape[2] == 3:
+                    mode = 'RGB'
+                else:
+                    raise ValueError(f"Formato de color inesperado: {frame.shape[2]} canales")
+            else:
+                raise ValueError(f"Formato de cuadro inesperado: {frame.ndim} dimensiones")
+
+            # Convertir el cuadro a una superficie de Pygame
+            frame_surface = pygame.image.frombuffer(frame.tobytes(), frame.shape[1::-1], mode)
+
+            # Convertir la superficie para optimización
+            if mode == 'RGB':
+                frame_surface = frame_surface.convert()
+            elif mode == 'RGBA':
+                frame_surface = frame_surface.convert_alpha()
+
+            # Redimensionar el cuadro si es necesario
+            frame_surface = pygame.transform.scale(frame_surface, (ANCHO, ALTO))
+
+            frames.append(frame_surface)
+        return frames
+    except Exception as e:
+        print(f"Error al cargar el GIF: {e}")
+        return []
+
+# Cargar cuadros del GIF de derrota
+cuadros_derrota = cargar_gif('assets/derrota.gif')
+num_cuadros_derrota = len(cuadros_derrota)
+frame_actual_derrota = 0
+velocidad_derrota = 10  # Cambia este valor para ajustar la velocidad de la animación
+contador_derrota = 0
+
 def reproducir_video(ruta_video):
     # Cargar el video con MoviePy
     clip = VideoFileClip(ruta_video)
@@ -86,16 +132,17 @@ def reproducir_video(ruta_video):
                     if os.path.exists(audio_temp):
                         os.remove(audio_temp)
                     return  # Salir de la función y pasar al menú
-    
+
         # Convertir el frame a una superficie de Pygame
         frame_surface = pygame.surfarray.make_surface(frame.swapaxes(0, 1))
+        # Ajusta la orientación si es necesario
         frame_surface = pygame.transform.flip(frame_surface, True, False)
-    
+
         # Dibujar el frame en la ventana
         VENTANA.blit(frame_surface, (0, 0))
         pygame.display.update()
         RELOJ.tick(FPS)
-    
+
     # Cerrar el clip y detener el audio al finalizar el video
     clip.close()
     pygame.mixer.music.stop()
@@ -277,18 +324,7 @@ def mostrar_menu():
 
 # Función para mostrar la pantalla de fin de juego
 def mostrar_fin_juego(ganaste, puntuacion):
-    VENTANA.fill(NEGRO)
-    if ganaste:
-        mensaje = "¡Has ganado!"
-    else:
-        mensaje = "Juego terminado"
-    texto_fin = fuente_fin.render(mensaje, True, BLANCO)
-    texto_puntuacion = fuente_puntuacion.render(f"Puntuación: {puntuacion}", True, BLANCO)
-    texto_reiniciar = fuente_puntuacion.render("Presiona ENTER para volver al menú", True, BLANCO)
-    VENTANA.blit(texto_fin, (ANCHO // 2 - texto_fin.get_width() // 2, ALTO // 2 - 50))
-    VENTANA.blit(texto_puntuacion, (ANCHO // 2 - texto_puntuacion.get_width() // 2, ALTO // 2))
-    VENTANA.blit(texto_reiniciar, (ANCHO // 2 - texto_reiniciar.get_width() // 2, ALTO // 2 + 50))
-    pygame.display.flip()
+    global cuadros_derrota, num_cuadros_derrota, frame_actual_derrota, velocidad_derrota, contador_derrota
 
     esperando = True
     while esperando:
@@ -300,6 +336,41 @@ def mostrar_fin_juego(ganaste, puntuacion):
             if evento.type == pygame.KEYDOWN:
                 if evento.key == pygame.K_RETURN:
                     esperando = False
+
+        # Dibujar la animación del GIF de derrota si el jugador no ganó
+        if not ganaste and cuadros_derrota:
+            VENTANA.blit(cuadros_derrota[frame_actual_derrota], (0, 0))
+            # Actualizar el frame actual
+            contador_derrota += 1
+            if contador_derrota >= velocidad_derrota:
+                contador_derrota = 0
+                frame_actual_derrota = (frame_actual_derrota + 1) % num_cuadros_derrota
+        else:
+            # Dibujar el fondo negro si el jugador ganó o no hay cuadros de GIF
+            VENTANA.fill(NEGRO)
+
+        # Dibujar mensajes
+        if ganaste:
+            mensaje = "¡Has ganado!"
+        else:
+            mensaje = "Juego terminado"
+        texto_fin = fuente_fin.render(mensaje, True, BLANCO)
+        texto_puntuacion = fuente_puntuacion.render(f"Puntuación: {puntuacion}", True, BLANCO)
+        texto_reiniciar = fuente_puntuacion.render("Presiona ENTER para volver al menú", True, BLANCO)
+
+        # Posicionar los textos
+        if not ganaste and cuadros_derrota:
+            # Si se está mostrando la animación, posicionar los textos en la parte inferior
+            VENTANA.blit(texto_fin, (ANCHO // 2 - texto_fin.get_width() // 2, ALTO - 150))
+            VENTANA.blit(texto_puntuacion, (ANCHO // 2 - texto_puntuacion.get_width() // 2, ALTO - 100))
+            VENTANA.blit(texto_reiniciar, (ANCHO // 2 - texto_reiniciar.get_width() // 2, ALTO - 50))
+        else:
+            # Si no hay animación o el jugador ganó, posicionar los textos en el centro
+            VENTANA.blit(texto_fin, (ANCHO // 2 - texto_fin.get_width() // 2, ALTO // 2 - 50))
+            VENTANA.blit(texto_puntuacion, (ANCHO // 2 - texto_puntuacion.get_width() // 2, ALTO // 2))
+            VENTANA.blit(texto_reiniciar, (ANCHO // 2 - texto_reiniciar.get_width() // 2, ALTO // 2 + 50))
+
+        pygame.display.flip()
 
 # Función principal del juego
 def juego():
