@@ -2,6 +2,7 @@ import pygame
 import sys
 import random
 
+
 # Inicialización de Pygame
 pygame.init()
 pygame.mixer.init()
@@ -18,6 +19,8 @@ RELOJ = pygame.time.Clock()
 # Colores
 BLANCO = (255, 255, 255)
 NEGRO = (0, 0, 0)
+GRIS = (100, 100, 100)
+AZUL = (0, 0, 255)
 
 # Cargar imágenes (asegúrate de tener estas imágenes en la ruta especificada)
 # Reemplaza 'ruta/a/imagen.png' por las rutas correctas de tus imágenes
@@ -155,23 +158,64 @@ class Jefe(pygame.sprite.Sprite):
 
 # Función para mostrar el menú de inicio
 def mostrar_menu():
-    VENTANA.fill(NEGRO)
-    texto_titulo = fuente_menu.render("GALACTIC DEFENDER", True, BLANCO)
-    texto_iniciar = fuente_menu.render("Presiona ENTER para iniciar", True, BLANCO)
-    VENTANA.blit(texto_titulo, (ANCHO // 2 - texto_titulo.get_width() // 2, ALTO // 2 - 100))
-    VENTANA.blit(texto_iniciar, (ANCHO // 2 - texto_iniciar.get_width() // 2, ALTO // 2))
-    pygame.display.flip()
-
+    seleccion = 0  # 0: Jugar, 1: Salir
+    opciones = ["Jugar", "Salir"]
     esperando = True
+
     while esperando:
         RELOJ.tick(FPS)
+        VENTANA.fill(NEGRO)
+        texto_titulo = fuente_menu.render("GALACTIC DEFENDER", True, BLANCO)
+        VENTANA.blit(texto_titulo, (ANCHO // 2 - texto_titulo.get_width() // 2, ALTO // 2 - 150))
+
+        mouse_pos = pygame.mouse.get_pos()
+        mouse_click = False
+
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
             if evento.type == pygame.KEYDOWN:
+                if evento.key == pygame.K_UP:
+                    seleccion = (seleccion - 1) % len(opciones)
+                if evento.key == pygame.K_DOWN:
+                    seleccion = (seleccion + 1) % len(opciones)
                 if evento.key == pygame.K_RETURN:
-                    esperando = False
+                    if seleccion == 0:
+                        esperando = False  # Iniciar juego
+                    elif seleccion == 1:
+                        pygame.quit()
+                        sys.exit()
+            if evento.type == pygame.MOUSEBUTTONDOWN:
+                if evento.button == 1:
+                    mouse_click = True
+
+        # Dibujar botones
+        botones = []
+        for i, opcion in enumerate(opciones):
+            if i == seleccion:
+                color = AZUL
+            else:
+                color = BLANCO
+
+            # Detectar hover con el mouse
+            texto_opcion = fuente_fin.render(opcion, True, color)
+            rect_opcion = texto_opcion.get_rect()
+            rect_opcion.center = (ANCHO // 2, ALTO // 2 + i * 60)
+            botones.append((rect_opcion, opcion))
+            if rect_opcion.collidepoint(mouse_pos):
+                color = AZUL
+                texto_opcion = fuente_fin.render(opcion, True, color)
+                seleccion = i  # Actualizar selección con el mouse
+                if mouse_click:
+                    if opcion == "Jugar":
+                        esperando = False  # Iniciar juego
+                    elif opcion == "Salir":
+                        pygame.quit()
+                        sys.exit()
+            VENTANA.blit(texto_opcion, rect_opcion)
+
+        pygame.display.flip()
 
 # Función para mostrar la pantalla de fin de juego
 def mostrar_fin_juego(ganaste, puntuacion):
@@ -224,7 +268,7 @@ def juego():
 
     # Temporizadores
     GENERAR_ENEMIGO = pygame.USEREVENT + 1
-    pygame.time.set_timer(GENERAR_ENEMIGO, 1000 - nivel * 100)  # Aumenta la frecuencia con el nivel
+    pygame.time.set_timer(GENERAR_ENEMIGO, max(200, 1000 - nivel * 100))  # Aumenta la frecuencia con el nivel
     GENERAR_POWERUP = pygame.USEREVENT + 2
     pygame.time.set_timer(GENERAR_POWERUP, 10000)  # Cada 10 segundos
 
